@@ -16,3 +16,21 @@ func (GRPC) RunServer() {
 func (GRPC) RunClient() {
 	sh.Run("go", "run", "./grpc/client")
 }
+
+// CompileProto generates the go protobuf code, execute with [-w grpc/proto]
+func (GRPC) CompileProto() error {
+	err := sh.Run("go", "install", "google.golang.org/protobuf/cmd/protoc-gen-go@latest")
+	if err != nil {
+		return err
+	}
+
+	err = sh.Run(
+		"protoc", "--go_out", ".", "--go_opt", "paths=source_relative",
+		"--go-grpc_out", ".", "--go-grpc_opt", "paths=source_relative", "bank.proto",
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

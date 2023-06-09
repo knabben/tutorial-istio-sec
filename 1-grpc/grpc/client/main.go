@@ -1,27 +1,23 @@
-// Package main implements a client for Greeter service.
 package main
 
 import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"flag"
-	"google.golang.org/grpc/credentials"
 	"log"
 	"os"
 	"time"
 
 	"google.golang.org/grpc"
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
-)
+	"google.golang.org/grpc/credentials"
 
-const (
-	defaultName = "world"
+	pb "github.com/knabben/tutorial-istio-sec/1-grpc/grpc/proto"
 )
 
 var (
-	addr = flag.String("addr", "localhost:50051", "the address to connect to")
-
+	addr    = flag.String("addr", "localhost:50051", "the address to connect to")
 	rootCA  = flag.String("rootca", "./tls/certs/root-cert.pem", "Root CA certificate")
 	cert    = flag.String("cert", "./tls/certs/client-cert.pem", "Client certificate")
 	keypair = flag.String("keypair", "./tls/certs/client-keypair.pem", "Client keypair")
@@ -30,31 +26,31 @@ var (
 func main() {
 	flag.Parse()
 
+	client := getCertSubject()
 	creds, err := generateCreds()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// create client connection
-	conn, err := grpc.Dial("localhost:50051",
-		grpc.WithTransportCredentials(creds),
-	)
+	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer conn.Close()
-	c := pb.NewGreeterClient(conn)
 
-	// Contact the server and print out its response.
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
-	r, err := c.SayHello(ctx, &pb.HelloRequest{})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+	for {
+		c := pb.NewCasinoClient(conn)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		r, err := c.PayIt(ctx, &pb.TransactionRequest{
+			Value: float32(time.Now().Second()), Client: client,
+		})
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		log.Printf("Error = %v", r.GetError())
+		cancel()
+		time.Sleep(2 * time.Second)
 	}
-	log.Printf("Greeting: %s", r.GetMessage())
 }
 
 func generateCreds() (credentials.TransportCredentials, error) {
@@ -78,4 +74,14 @@ func generateCreds() (credentials.TransportCredentials, error) {
 		Certificates: []tls.Certificate{certificate},
 		RootCAs:      pool,
 	}), nil
+}
+
+func getCertSubject() string {
+	data, err := os.ReadFile(*cert)
+	if err != nil {
+		log.Fatal(err)
+	}
+	dec, _ := pem.Decode(data)
+	crt, _ := x509.ParseCertificate(dec.Bytes)
+	return crt.Subject.String()
 }

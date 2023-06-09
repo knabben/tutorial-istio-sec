@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"flag"
@@ -11,20 +12,34 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	pb "github.com/knabben/tutorial-istio-sec/1-grpc/grpc/proto"
 )
 
-type greeterService struct {
-	pb.UnimplementedGreeterServer
-}
-
 var (
-	addr = flag.String("addr", "0.0.0.0:50051", "Server address")
-
+	addr    = flag.String("addr", "0.0.0.0:50051", "Server address")
 	rootCA  = flag.String("rootca", "./tls/certs/root-cert.pem", "Root CA certificate")
 	cert    = flag.String("cert", "./tls/certs/server-cert.pem", "Server certificate")
 	keypair = flag.String("keypair", "./tls/certs/server-keypair.pem", "Server keypair")
 )
+
+var (
+	total = map[string]float32{}
+)
+
+type casino struct {
+	pb.UnimplementedCasinoServer
+}
+
+func (s *casino) PayIt(ctx context.Context, in *pb.TransactionRequest) (*pb.TransactionReply, error) {
+	if in.GetClient() == "" {
+		return &pb.TransactionReply{Error: true}, nil
+	}
+
+	total[in.GetClient()] += in.GetValue()
+	log.Printf("Received %v from %s, total: %v", in.GetValue(), in.GetClient(), total[in.GetClient()])
+
+	return &pb.TransactionReply{Error: false}, nil
+}
 
 func main() {
 	flag.Parse()
@@ -34,21 +49,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	grpcServer := grpc.NewServer(grpc.Creds(creds))
+	srv := grpc.NewServer(grpc.Creds(creds))
+	pb.RegisterCasinoServer(srv, &casino{})
 
-	// register service into grpc server
-	pb.RegisterGreeterServer(grpcServer, &greeterService{})
-
-	// listen port
-	lis, err := net.Listen("tcp", *addr)
+	listen, err := net.Listen("tcp", *addr)
 	if err != nil {
 		log.Fatalf("list port err: %v", err)
 	}
 
-	log.Printf("listening at %v", lis.Addr())
-
-	// listen port
-	if err := grpcServer.Serve(lis); err != nil {
+	log.Printf("listening at %v", listen.Addr())
+	if err := srv.Serve(listen); err != nil {
 		log.Fatalf("grpc serve err: %v", err)
 	}
 }
