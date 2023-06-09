@@ -1,2 +1,2 @@
 # tutorial-istio-sec
-Tutorial for Istio Security for gRPC services 
+Tutorial on Istio Security for gRPC services 

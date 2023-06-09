@@ -2,5 +2,7 @@ go 1.20
 
 use (
 	./grpc
+	./grpc/client
+	./grpc/server
 	./tls
 )

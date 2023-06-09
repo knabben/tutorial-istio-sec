@@ -1,12 +1,18 @@
-package grpc
+package tls
 
 import (
-	"os"
+	"github.com/magefile/mage/mg"
+	"github.com/magefile/mage/sh"
 )
 
+type GRPC mg.Namespace
 
-// A custom install step if you need your bin someplace other than go/bin
-func GRPC() error {
-	return os.Rename("./MyApp", "/usr/bin/MyApp")
+// RunServer runs a TLS based gRPC server
+func (GRPC) RunServer() {
+	sh.Run("go", "run", "./grpc/server")
 }
 
+// RunClient runs a TLS based gRPC client
+func (GRPC) RunClient() {
+	sh.Run("go", "run", "./grpc/client")
+}

@@ -11,77 +11,176 @@ type TLS mg.Namespace
 const (
 	certificateFolder = "./tls/certs"
 
-	certCAKeyPair = "root_keypair.pem"
-	certCACSR     = "root_csr.pem"
-	certCACert    = "root_cert.pem"
+	certCAKeyPair = "root-keypair.pem"
+	certCACert    = "root-cert.pem"
 
-	// valid algorithm options RSA, RSA-PSS, EC, X25519, X448, ED25519 and ED448.
-	certificateAlgo = "ED448"
+	certSrvKey  = "server-keypair.pem"
+	certSrvCsr  = "server-csr.pem"
+	certSrvCert = "server-cert.pem"
+
+	certCliKey  = "client-keypair.pem"
+	certCliCSR  = "client-csr.pem"
+	certCliCert = "client-cert.pem"
 )
 
 var (
-	fullCertKeyPair = path.Join(certificateFolder, certCAKeyPair)
-	fullRootCsr     = path.Join(certificateFolder, certCACSR)
+	fullRootKeyPair = path.Join(certificateFolder, certCAKeyPair)
 	fullRootCert    = path.Join(certificateFolder, certCACert)
+
+	fullServerKeyPair = path.Join(certificateFolder, certSrvKey)
+	fullServerCSR     = path.Join(certificateFolder, certSrvCsr)
+	fullServerCert    = path.Join(certificateFolder, certSrvCert)
+
+	fullClientKeyPair = path.Join(certificateFolder, certCliKey)
+	fullClientCSR     = path.Join(certificateFolder, certCliCSR)
+	fullClientCert    = path.Join(certificateFolder, certCliCert)
 )
 
-// GenCAKeyPair 1 - Create a new public/private key pair under the certs folder
-func (TLS) GenCAKeyPair() error {
-	// generate a new key pair
-	args := []string{"genpkey", "-algorithm", certificateAlgo, "-out", fullCertKeyPair}
-	if err := sh.Run("openssl", args...); err != nil {
-		return err
-	}
-
-	if err := printCert(fullCertKeyPair, "pkey"); err != nil {
-		return err
-	}
-
-	return nil
+type Certificate struct {
+	days     string
+	request  string
+	ca       string
+	caKey    string
+	certFile string
 }
 
-// GenCARootCSR 2 - Creates a new CSR file and print
-func (TLS) GenCARootCSR() error {
-	subject := "/CN=Root CA" // uses DN notation
-	extension := "basicConstraints=critical,CA:TRUE"
-
-	// generate a new CSR (Certificate Signing Request)
-	args := []string{"req", "-new",
-		"-subj", subject,
-		"-addext", extension,
-		"-key", fullCertKeyPair,
-		"-out", fullRootCsr,
+func (x *Certificate) Render() (string, []string) {
+	return "openssl", []string{
+		"x509", "-req",
+		"-in", x.request,
+		"-days", x.days,
+		"-CAcreateserial",
+		"-CA", x.ca,
+		"-CAkey", x.caKey,
+		"-out", x.certFile,
+		"-extfile", "./tls/ext.conf",
 	}
-	if err := sh.Run("openssl", args...); err != nil {
-		return err
-	}
-
-	if err := printCert(fullRootCsr, "req"); err != nil {
-		return err
-	}
-
-	return nil
 }
 
-// GenCARootCert 3 - Generate CA root certificate from CSR
-func (TLS) GenCARootCert() error {
-	// generate a new CA certificate (Certificate Signing Request)
-	args := []string{"x509",
-		"-req",
-		"-in", fullRootCsr,
-		"-copy_extensions", "copyall",
-		"-key", fullCertKeyPair,
-		"-days", "365",
-		"-out", fullRootCert,
+type CertificateSignRequest struct {
+	cypher  string
+	subject string
+	keyFile string
+	csrFile string
+}
+
+func (c *CertificateSignRequest) Render() (string, []string) {
+	return "openssl", []string{
+		"req",
+		"-nodes",
+		"-newkey", c.cypher,
+		"-keyout", c.keyFile,
+		"-out", c.csrFile,
+		"-subj", c.subject,
 	}
-	if err := sh.Run("openssl", args...); err != nil {
+}
+
+type RootCACertificate struct {
+	cypher  string
+	days    string
+	subject string
+	keyFile string
+	certOut string
+}
+
+func (r *RootCACertificate) Render() (string, []string) {
+	if r.cypher == "" {
+		r.cypher = "rsa:4096" // default to RSA
+	}
+	return "openssl", []string{
+		"req",
+		"-x509",
+		"-nodes",
+		"-newkey", r.cypher,
+		"-days", r.days,
+		"-keyout", r.keyFile,
+		"-out", r.certOut,
+		"-subj", r.subject,
+	}
+}
+
+// GenRootCA 1 - Generates a new Root CA and CA key pair
+func (TLS) GenRootCA() error {
+	cert := &RootCACertificate{
+		cypher:  "rsa:4096",
+		days:    "365",
+		subject: "/CN=Root CA",
+		keyFile: fullRootKeyPair,
+		certOut: fullRootCert,
+	}
+
+	cmd, args := cert.Render()
+	if err := sh.Run(cmd, args...); err != nil {
 		return err
 	}
 
 	if err := printCert(fullRootCert, "x509"); err != nil {
 		return err
 	}
+	return nil
+}
 
+// GenServerCert 2 - Generates a server CSR and server cert
+func (TLS) GenServerCert() error {
+	req := &CertificateSignRequest{
+		cypher:  "rsa:4096",
+		subject: "/OU=server,CN=localhost",
+		keyFile: fullServerKeyPair,
+		csrFile: fullServerCSR,
+	}
+
+	cmd, args := req.Render()
+	if err := sh.Run(cmd, args...); err != nil {
+		return err
+	}
+
+	cert := &Certificate{
+		days:     "365",
+		request:  fullServerCSR,
+		ca:       fullRootCert,
+		caKey:    fullRootKeyPair,
+		certFile: fullServerCert,
+	}
+	cmd, args = cert.Render()
+	if err := sh.Run(cmd, args...); err != nil {
+		return err
+	}
+
+	if err := printCert(fullServerCert, "x509"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GenClientCert 3 - Generates a client CSR and client cert
+func (TLS) GenClientCert() error {
+	req := &CertificateSignRequest{
+		cypher:  "rsa:4096",
+		subject: "/OU=client,CN=localhost",
+		keyFile: fullClientKeyPair,
+		csrFile: fullClientCSR,
+	}
+	cmd, args := req.Render()
+	if err := sh.Run(cmd, args...); err != nil {
+		return err
+	}
+
+	cert := &Certificate{
+		days:     "60",
+		request:  fullClientCSR,
+		ca:       fullRootCert,
+		caKey:    fullRootKeyPair,
+		certFile: fullClientCert,
+	}
+	cmd, args = cert.Render()
+	if err := sh.Run(cmd, args...); err != nil {
+		return err
+	}
+
+	if err := printCert(fullClientCert, "x509"); err != nil {
+		return err
+	}
 	return nil
 }
 
