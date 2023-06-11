@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  labels:
+    app: server
+spec:
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      hostPID: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccount: server
+      containers:
+        - name: client
+          imagePullPolicy: Always
+          image: "knabben/spiffe-server"
+          command: ["/server"]
+          args: [
+            "-sock", "unix:///run/spire/sockets/agent.sock",
+            "-allowID", "spiffe://opssec.in/ns/default/sa/client"
+          ]
+          volumeMounts:
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
+              readOnly: true
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  labels:
+    app: client
+spec:
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      hostPID: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccount: client
+      containers:
+        - name: client
+          imagePullPolicy: Always
+          image: "knabben/spiffe-client"
+          command: ["/client"]
+          args: [
+            "-sock", "unix:///run/spire/sockets/agent.sock",
+            "-allowID", "spiffe://opssec.in/ns/default/sa/server",
+            "-host", "server:80"
+          ]
+          volumeMounts:
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
+              readOnly: true
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: server
+  name: server
+  namespace: default
+spec:
+  selector:
+    app: server
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 50051
+  type: ClusterIP
