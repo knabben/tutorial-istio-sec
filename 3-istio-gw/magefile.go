@@ -33,13 +33,22 @@ func (SM) Install() error {
 		}
 	}
 
-	//serviceMesh.InstallIstio(config)
+	// Install Istio
+	if err := serviceMesh.InstallIstio(ISTIO_CONFIG); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Delete cleans up resources from cluster
 func (SM) Delete() error {
-	if err := serviceMesh.DeleteKind(CLUSTER_NAME); err != nil {
+	if os.Getenv("INSTALL_KIND") != "" {
+		if err := serviceMesh.DeleteKind(CLUSTER_NAME); err != nil {
+			return err
+		}
+	}
+	if err := serviceMesh.DeleteIstio(); err != nil {
 		return err
 	}
 	return nil
