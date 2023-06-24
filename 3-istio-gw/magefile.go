@@ -4,30 +4,42 @@
 package main
 
 import (
+	"github.com/knabben/tutorial-istio-sec/3-istio-gw/steps"
 	"github.com/magefile/mage/mg"
-	"github.com/magefile/mage/sh"
+	"os"
 )
-
-type K8S mg.Namespace
 
 const (
-	KIND_YAML = "./specs/kind.yaml"
+	CLUSTER_NAME = "ambient"
+	ISTIO_CONFIG = "istio.yaml"
 )
 
+var (
+	serviceMesh steps.ServiceMeshI
+)
+
+func init() {
+	serviceMesh = steps.NewServiceMesh()
+}
+
+type SM mg.Namespace
+
 // Install installs resources into the cluster
-func (K8S) Install() error {
-	if err := sh.RunV("kind", "delete", "cluster", "--name", "ambient"); err != nil {
-		return err
+func (SM) Install() error {
+	if os.Getenv("INSTALL_KIND") != "" {
+		// Install kind with MetalLB enabled.
+		if err := serviceMesh.InstallKind(CLUSTER_NAME, "kind.yaml", true); err != nil {
+			return err
+		}
 	}
-	if err := sh.RunV("kind", "create", "cluster", "--config", KIND_YAML); err != nil {
-		return err
-	}
+
+	//serviceMesh.InstallIstio(config)
 	return nil
 }
 
 // Delete cleans up resources from cluster
-func (K8S) Delete() error {
-	if err := sh.RunV("kind", "delete", "cluster", "--name", "ambient"); err != nil {
+func (SM) Delete() error {
+	if err := serviceMesh.DeleteKind(CLUSTER_NAME); err != nil {
 		return err
 	}
 	return nil
