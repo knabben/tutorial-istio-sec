@@ -81,6 +81,11 @@ func (s *ServiceMesh) InstallIstio(p string) error {
 		return err
 	}
 
+	// wait for kiali pod be done
+	if err := sh.RunV("kubectl", "-n", "istio-system", "wait", "--for=condition=Ready", "pod", "-l", "app=kiali", "--timeout", "300s"); err != nil {
+		return nil
+	}
+
 	// Start Kiali dashboard
 	if err := sh.RunV("istioctl", "dashboard", "kiali"); err != nil {
 		return err
@@ -123,7 +128,7 @@ func (s *ServiceMesh) InstallKind(name string, config string, withLB bool) error
 
 	if withLB {
 		for _, spec := range []string{METALLB_URL, path.Join(SpecsFolder, METALLB_CR)} {
-			_ = sh.Run("kubectl", "-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb")
+			_ = sh.Run("kubectl", "-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb", "--timeout", "300s")
 			// Create a new cluster using predefined configuration file
 			if err := sh.RunV("kubectl", "apply", "-f", spec); err != nil {
 				return err
@@ -145,7 +150,7 @@ func (s *ServiceMesh) DeleteKind(name string) error {
 
 func (s *ServiceMesh) DeleteIstio() error {
 	// Uninstall istio
-	if err := sh.RunV("istioctl", "uninstall", "--purge"); err != nil {
+	if err := sh.RunV("istioctl", "uninstall", "-y", "--purge"); err != nil {
 		return err
 	}
 
