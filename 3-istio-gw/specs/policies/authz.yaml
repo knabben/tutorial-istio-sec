@@ -1,0 +1,21 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: authz-appb
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      istio.io/gateway-name: appb
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/default/sa/appa
+              - cluster.local/ns/default/sa/gateway-istio
+      to:
+      - operation:
+          methods:
+          - GET

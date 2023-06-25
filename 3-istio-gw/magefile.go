@@ -11,6 +11,8 @@ import (
 
 const (
 	CLUSTER_NAME = "ambient"
+	namespace    = "default"
+
 	ISTIO_CONFIG = "istio.yaml"
 )
 
@@ -32,9 +34,8 @@ func (SM) Install() error {
 			return err
 		}
 	}
-
 	// Install Istio
-	if err := serviceMesh.InstallIstio(ISTIO_CONFIG); err != nil {
+	if err := serviceMesh.InstallIstio(ISTIO_CONFIG, namespace); err != nil {
 		return err
 	}
 
@@ -43,16 +44,16 @@ func (SM) Install() error {
 
 // Deploy creates the pre-defined topology for tests
 func (SM) Deploy() error {
-	if err := serviceMesh.DeployApplication("default"); err != nil {
+	if err := serviceMesh.DeployApplication(namespace); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Control applies VirtualService and define traffic controls for app
-func (SM) Control() error {
-	if err := serviceMesh.ApplyControlTraffic("default"); err != nil {
+// Policies create a VirtualService and define application Authorization files
+func (SM) Policies() error {
+	if err := serviceMesh.ApplyPolicies(namespace); err != nil {
 		return err
 	}
 
@@ -70,5 +71,6 @@ func (SM) Delete() error {
 			return err
 		}
 	}
+
 	return nil
 }
