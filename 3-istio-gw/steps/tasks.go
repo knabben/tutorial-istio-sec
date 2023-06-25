@@ -2,6 +2,7 @@ package steps
 
 import (
 	"github.com/magefile/mage/sh"
+	"log"
 	"os"
 	"path"
 )
@@ -133,13 +134,25 @@ func (s *ServiceMesh) InstallIstio(p string) error {
 	return nil
 }
 
+func printGwListener(gw string) error {
+	log.Printf("\n\nProxy-config listener configuration for %v\n\n", gw)
+	if err := istioctl("proxy-config", "listener", gw); err != nil {
+		return err
+	}
+	log.Printf("\n\nProxy-config route configuration for %v\n\n", gw)
+	if err := istioctl("proxy-config", "route", gw); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ServiceMesh) DeployApplication(namespace string) error {
 	for _, sp := range []string{"deploy.yaml", "gateway.yaml"} {
 		if err := kubectl("apply", "-n", namespace, "-f", path.Join(SpecsFolder, sp)); err != nil {
 			return err
 		}
 	}
-	return nil
+	return printGwListener("deploy/gateway-istio")
 }
 
 // ApplyControlTraffic generates DestinationRoute and VirtualService for appb
@@ -147,7 +160,7 @@ func (s *ServiceMesh) ApplyControlTraffic(namespace string) error {
 	if err := kubectl("apply", "-n", namespace, "-f", path.Join(SpecsFolder, "control.yaml")); err != nil {
 		return err
 	}
-	return nil
+	return printGwListener("deploy/namespace-istio-waypoint")
 }
 
 func (s *ServiceMesh) ApplyLayer4() {
