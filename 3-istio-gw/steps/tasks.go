@@ -6,15 +6,6 @@ import (
 	"path"
 )
 
-var (
-	SpecsFolder string
-)
-
-func init() {
-	wd, _ := os.Getwd()
-	SpecsFolder = path.Join(wd, "specs")
-}
-
 // ServiceMeshI is an interface for fresh new Istio installation
 type ServiceMeshI interface {
 	InstallKind(name, config string, withLB bool) error
@@ -37,57 +28,70 @@ const (
 	METALLB_CR  = "metallb_cr.yaml"
 )
 
+var (
+	SpecsFolder string
+
+	kubectl  = sh.RunCmd("kubectl")
+	istioctl = sh.RunCmd("istioctl")
+)
+
+func init() {
+	wd, _ := os.Getwd()
+	SpecsFolder = path.Join(wd, "specs")
+}
+
 func (s *ServiceMesh) InstallIstio(p string) error {
 	// Apply the Gateway API custom resources.
-	args := []string{
-		"kustomize",
-		"github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.6.2",
-		"-o", "/tmp/kustomized",
+	args := [][]string{
+		{
+			"kustomize", "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.6.2", "-o", "/tmp/kustomized",
+		},
+		{
+			"apply", "-f", "/tmp/kustomized",
+		},
 	}
-	if err := sh.RunV("kubectl", args...); err != nil {
-		return err
-	}
-
-	if err := sh.RunV("kubectl", "apply", "-f", "/tmp/kustomized"); err != nil {
-		return err
+	for _, a := range args {
+		if err := kubectl(a...); err != nil {
+			return err
+		}
 	}
 
 	// Install Istio with custom ambient
-	args = []string{
-		"install",
-		"-y",
-		"--set",
-		"values.global.proxy.logLevel=debug",
-		"-f",
-		path.Join(SpecsFolder, p),
-	}
-	if err := sh.RunV("istioctl", args...); err != nil {
+	argss := []string{"install", "-y", "--set", "values.global.proxy.logLevel=debug", "-f", path.Join(SpecsFolder, p)}
+	if err := istioctl(argss...); err != nil {
 		return err
 	}
 
 	// Apply otel addons
-	if err := sh.RunV("kubectl", "apply", "-f", path.Join(SpecsFolder, "otel/")); err != nil {
+	if err := kubectl("apply", "-f", path.Join(SpecsFolder, "otel/")); err != nil {
 		return err
 	}
 
-	// Enable ambient mode on default namespace
-	args = []string{
-		"label",
-		"namespace",
-		"default",
-		"istio.io/dataplane-mode=ambient",
+	// Enable ambient mode on default namespace and wait Kiali for completion
+	args = [][]string{
+		{
+			"label", "namespace", "default", "istio.io/dataplane-mode=ambient",
+		},
+		{
+			"-n",
+			"istio-system",
+			"wait",
+			"--for=condition=Ready",
+			"pod",
+			"-l",
+			"app=kiali",
+			"--timeout",
+			"300s",
+		},
 	}
-	if err := sh.RunV("kubectl", args...); err != nil {
-		return err
-	}
-
-	// wait for kiali pod be done
-	if err := sh.RunV("kubectl", "-n", "istio-system", "wait", "--for=condition=Ready", "pod", "-l", "app=kiali", "--timeout", "300s"); err != nil {
-		return nil
+	for _, a := range args {
+		if err := kubectl(a...); err != nil {
+			return err
+		}
 	}
 
 	// Start Kiali dashboard
-	if err := sh.RunV("istioctl", "dashboard", "kiali"); err != nil {
+	if err := istioctl("dashboard", "kiali"); err != nil {
 		return err
 	}
 
@@ -128,9 +132,9 @@ func (s *ServiceMesh) InstallKind(name string, config string, withLB bool) error
 
 	if withLB {
 		for _, spec := range []string{METALLB_URL, path.Join(SpecsFolder, METALLB_CR)} {
-			_ = sh.Run("kubectl", "-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb", "--timeout", "300s")
+			_ = kubectl("-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb", "--timeout", "300s")
 			// Create a new cluster using predefined configuration file
-			if err := sh.RunV("kubectl", "apply", "-f", spec); err != nil {
+			if err := kubectl("apply", "-f", spec); err != nil {
 				return err
 			}
 		}
@@ -150,12 +154,12 @@ func (s *ServiceMesh) DeleteKind(name string) error {
 
 func (s *ServiceMesh) DeleteIstio() error {
 	// Uninstall istio
-	if err := sh.RunV("istioctl", "uninstall", "-y", "--purge"); err != nil {
+	if err := istioctl("uninstall", "-y", "--purge"); err != nil {
 		return err
 	}
 
 	// Uninstall otel addons
-	if err := sh.RunV("kubectl", "delete", "-f", path.Join(SpecsFolder, "otel/")); err != nil {
+	if err := kubectl("delete", "-f", path.Join(SpecsFolder, "otel/")); err != nil {
 		return err
 	}
 	return nil
