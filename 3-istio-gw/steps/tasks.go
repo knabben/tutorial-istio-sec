@@ -24,9 +24,9 @@ type ServiceMeshI interface {
 	InstallIstio(path string) error
 
 	DeployApplication(namespace string) error
+	ApplyControlTraffic(namespace string) error
 	ApplyLayer4()
 	ApplyLayer7()
-	ApplyControlTraffic()
 
 	DeleteKind(name string) error
 	DeleteIstio() error
@@ -54,7 +54,19 @@ func (s *ServiceMesh) InstallKind(name string, config string, withLB bool) error
 		return err
 	}
 
-	if withLB {
+	// Set sysctl parameters on each cluster node
+	for _, host := range []string{"ambient-worker2", "ambient-control-plane", "ambient-worker"} {
+		args := []string{"exec", host, "sysctl", "-w"}
+
+		for _, s := range []string{"fs.inotify.max_user_instances=1024", "fs.inotify.max_user_watches=1048576"} {
+			argss := append(args, s)
+			if err := sh.RunV("docker", argss...); err != nil {
+				return nil
+			}
+		}
+	}
+
+	if withLB { // Install MetalLB in the cluster
 		for _, spec := range []string{METALLB_URL, path.Join(SpecsFolder, METALLB_CR)} {
 			_ = kubectl("-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb", "--timeout", "300s")
 			// Create a new cluster using predefined configuration file
@@ -70,12 +82,8 @@ func (s *ServiceMesh) InstallKind(name string, config string, withLB bool) error
 func (s *ServiceMesh) InstallIstio(p string) error {
 	// Apply the Gateway API custom resources.
 	args := [][]string{
-		{
-			"kustomize", "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.6.2", "-o", "/tmp/kustomized",
-		},
-		{
-			"apply", "-f", "/tmp/kustomized",
-		},
+		{"kustomize", "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.6.2", "-o", "/tmp/kustomized"},
+		{"apply", "-f", "/tmp/kustomized"},
 	}
 	for _, a := range args {
 		if err := kubectl(a...); err != nil {
@@ -125,6 +133,23 @@ func (s *ServiceMesh) InstallIstio(p string) error {
 	return nil
 }
 
+func (s *ServiceMesh) DeployApplication(namespace string) error {
+	for _, sp := range []string{"deploy.yaml", "gateway.yaml"} {
+		if err := kubectl("apply", "-n", namespace, "-f", path.Join(SpecsFolder, sp)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ApplyControlTraffic generates DestinationRoute and VirtualService for appb
+func (s *ServiceMesh) ApplyControlTraffic(namespace string) error {
+	if err := kubectl("apply", "-n", namespace, "-f", path.Join(SpecsFolder, "control.yaml")); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ServiceMesh) ApplyLayer4() {
 	//TODO implement me
 	panic("implement me")
@@ -133,15 +158,6 @@ func (s *ServiceMesh) ApplyLayer4() {
 func (s *ServiceMesh) ApplyLayer7() {
 	//TODO implement me
 	panic("implement me")
-}
-
-func (s *ServiceMesh) ApplyControlTraffic() {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *ServiceMesh) DeployApplication(namespace string) error {
-	return nil
 }
 
 // DeleteKind delete an existent kind cluster

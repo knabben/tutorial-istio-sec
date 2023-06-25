@@ -36,8 +36,8 @@ spec:
     spec:
       serviceAccountName: appa
       containers:
-      - image: docker.io/kong/httpbin
-        imagePullPolicy: IfNotPresent
+      - image: docker.io/knabben/httpbin
+        imagePullPolicy: Always
         name: appa
         ports:
         - containerPort: 80
@@ -80,8 +80,8 @@ spec:
     spec:
       serviceAccountName: appb
       containers:
-      - image: docker.io/kong/httpbin
-        imagePullPolicy: IfNotPresent
+      - image: docker.io/knabben/httpbin
+        imagePullPolicy: Always
         name: appb
         ports:
         - containerPort: 80

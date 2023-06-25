@@ -50,6 +50,15 @@ func (SM) Deploy() error {
 	return nil
 }
 
+// Control applies VirtualService and define traffic controls for app
+func (SM) Control() error {
+	if err := serviceMesh.ApplyControlTraffic("default"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Delete cleans up resources from cluster
 func (SM) Delete() error {
 	if os.Getenv("INSTALL_KIND") != "" {

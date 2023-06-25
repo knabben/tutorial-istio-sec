@@ -22,12 +22,12 @@ metadata:
 spec:
   parentRefs:
   - name: gateway
-  hostnames: ["appa.apifloripa.com.br"]
+  hostnames: ["appb.apifloripa.com.br"]
   rules:
   - matches:
     - path:
         type: PathPrefix
         value: /
     backendRefs:
-    - name: appa
+    - name: appb
       port: 8000

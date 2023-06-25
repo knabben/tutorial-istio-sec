@@ -1,0 +1,33 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: appb
+spec:
+  hosts:
+  - appb 
+  http:
+  - fault:
+      abort:
+        httpStatus: 410
+        percentage:
+          value: 100
+    match:
+    - uri:
+        prefix: "/status"
+    route:
+    - destination:
+        host: appb
+  - fault:
+      delay:
+        percentage:
+          value: 50.0
+        fixedDelay: 2s
+    match:
+    - uri:
+        prefix: "/headers"
+    route:
+    - destination:
+        host: appb
+  - route:
+    - destination:
+        host: appb
