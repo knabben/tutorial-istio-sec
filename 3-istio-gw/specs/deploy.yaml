@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: appa
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: appa
+  labels:
+    app: appa
+    service: appa
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 80
+  selector:
+    app: appa
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: appa
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: appa
+        version: v1
+    spec:
+      serviceAccountName: appa
+      containers:
+      - image: docker.io/kong/httpbin
+        imagePullPolicy: IfNotPresent
+        name: appa
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: appb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: appb
+  labels:
+    app: appb
+    service: appb
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 80
+  selector:
+    app: appb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: appb
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: appb
+        version: v1
+    spec:
+      serviceAccountName: appb
+      containers:
+      - image: docker.io/kong/httpbin
+        imagePullPolicy: IfNotPresent
+        name: appb
+        ports:
+        - containerPort: 80

@@ -1,13 +1,33 @@
 apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: gateway
+  namespace: default
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: default
+    hostname: "*.apifloripa.com.br"
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: All
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
-  name: reviews
+  name: http
+  namespace: default
 spec:
   parentRefs:
-  - kind: Service
-    name: reviews
-    port: 9080
+  - name: gateway
+  hostnames: ["appa.apifloripa.com.br"]
   rules:
-  - backendRefs:
-    - name: reviews-v1
-      port: 9080
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: appa
+      port: 8000

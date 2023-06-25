@@ -41,15 +41,25 @@ func (SM) Install() error {
 	return nil
 }
 
+// Deploy creates the pre-defined topology for tests
+func (SM) Deploy() error {
+	if err := serviceMesh.DeployApplication("default"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Delete cleans up resources from cluster
 func (SM) Delete() error {
 	if os.Getenv("INSTALL_KIND") != "" {
 		if err := serviceMesh.DeleteKind(CLUSTER_NAME); err != nil {
 			return err
 		}
-	}
-	if err := serviceMesh.DeleteIstio(); err != nil {
-		return err
+	} else {
+		if err := serviceMesh.DeleteIstio(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

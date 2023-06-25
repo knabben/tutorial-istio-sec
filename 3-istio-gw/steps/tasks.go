@@ -6,23 +6,6 @@ import (
 	"path"
 )
 
-// ServiceMeshI is an interface for fresh new Istio installation
-type ServiceMeshI interface {
-	InstallKind(name, config string, withLB bool) error
-	InstallIstio(path string) error
-	DeployApplication(enableAmbient bool)
-	ApplyLayer4()
-	ApplyLayer7()
-	ApplyControlTraffic()
-	DeleteKind(name string) error
-	DeleteIstio() error
-}
-
-type ServiceMesh struct {
-	Layer4Spec string
-	Layer7Spec string
-}
-
 const (
 	METALLB_URL = "https://raw.githubusercontent.com/metallb/metallb/v0.13.10/config/manifests/metallb-native.yaml"
 	METALLB_CR  = "metallb_cr.yaml"
@@ -35,9 +18,53 @@ var (
 	istioctl = sh.RunCmd("istioctl")
 )
 
+// ServiceMeshI is an interface for fresh new Istio installation
+type ServiceMeshI interface {
+	InstallKind(name, config string, withLB bool) error
+	InstallIstio(path string) error
+
+	DeployApplication(namespace string) error
+	ApplyLayer4()
+	ApplyLayer7()
+	ApplyControlTraffic()
+
+	DeleteKind(name string) error
+	DeleteIstio() error
+}
+
+type ServiceMesh struct {
+	Layer4Spec string
+	Layer7Spec string
+}
+
 func init() {
 	wd, _ := os.Getwd()
 	SpecsFolder = path.Join(wd, "specs")
+}
+
+// InstallKind installs kind as a base K8s cluster for local development
+func (s *ServiceMesh) InstallKind(name string, config string, withLB bool) error {
+	// Delete old cluster if exists
+	if err := sh.RunV("kind", "delete", "cluster", "--name", name); err != nil {
+		return err
+	}
+
+	// Create a new cluster using predefined configuration file
+	if err := sh.RunV("kind", "create", "cluster", "--name", name, "--config", path.Join(SpecsFolder, config)); err != nil {
+		return err
+	}
+
+	if withLB {
+		for _, spec := range []string{METALLB_URL, path.Join(SpecsFolder, METALLB_CR)} {
+			_ = kubectl("-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb", "--timeout", "300s")
+			// Create a new cluster using predefined configuration file
+			if err := kubectl("apply", "-f", spec); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *ServiceMesh) InstallIstio(p string) error {
@@ -113,33 +140,7 @@ func (s *ServiceMesh) ApplyControlTraffic() {
 	panic("implement me")
 }
 
-func (s *ServiceMesh) DeployApplication(enableAmbient bool) {
-	//TODO implement me
-	panic("implement me")
-}
-
-// InstallKind installs kind as a base K8s cluster for local development
-func (s *ServiceMesh) InstallKind(name string, config string, withLB bool) error {
-	// Delete old cluster if exists
-	if err := sh.RunV("kind", "delete", "cluster", "--name", name); err != nil {
-		return err
-	}
-
-	// Create a new cluster using predefined configuration file
-	if err := sh.RunV("kind", "create", "cluster", "--name", name, "--config", path.Join(SpecsFolder, config)); err != nil {
-		return err
-	}
-
-	if withLB {
-		for _, spec := range []string{METALLB_URL, path.Join(SpecsFolder, METALLB_CR)} {
-			_ = kubectl("-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb", "--timeout", "300s")
-			// Create a new cluster using predefined configuration file
-			if err := kubectl("apply", "-f", spec); err != nil {
-				return err
-			}
-		}
-	}
-
+func (s *ServiceMesh) DeployApplication(namespace string) error {
 	return nil
 }
 
