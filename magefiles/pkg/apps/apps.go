@@ -7,18 +7,33 @@ import (
 
 // DeployApplication install the application and objects
 func DeployApplication(specsFolder, namespace string) error {
+	p := writter.AppendFolder(specsFolder, "../certs/")
+	if err := writter.Kubectl("create", "secret", "tls", "twitter-credential",
+		"--key="+writter.AppendFolder(p, "appb.twitter.com.key"),
+		"--cert="+writter.AppendFolder(p, "appb.twitter.com.crt"),
+	); err != nil {
+		return err
+	}
+
 	// deploy the application and Kubernetes gateway object
 	appsFolder := writter.AppendFolder(specsFolder, "apps/")
 	if err := writter.Kubectl("apply", "-n", namespace, "-f", appsFolder); err != nil {
 		return err
 	}
 	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "app=appb", "--timeout", "300s")
-	// create a waypoint in the namespace
+	// create a waypoint for service accounts
 	if err := writter.Istioctl("x", "-n", namespace, "waypoint", "apply", "--service-account", "appb"); err != nil {
 		return err
 	}
+	if err := writter.Istioctl("x", "-n", namespace, "waypoint", "apply", "--service-account", "appa"); err != nil {
+		return err
+	}
 	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "istio.io/gateway-name=gateway", "--timeout", "300s")
-	return printGwListener("deploy/gateway-istio")
+
+	printGwListener("deploy/gateway-istio")
+	writter.Output("Run with HTTPS:\n curl https://appb.twitter.com/headers -v --cacert 3-istio-gw/certs/twitter.com.crt")
+
+	return nil
 }
 
 // ApplyPolicies creates a new AuthorizationPolicy for the appb service and VirtualService for control

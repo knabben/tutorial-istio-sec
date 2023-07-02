@@ -1,3 +1,4 @@
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -37,7 +38,7 @@ spec:
       serviceAccountName: appa
       nodeName: ambient-worker
       containers:
-      - image: docker.io/knabben/httpbin
+      - image: docker.io/knabben/httpbin:latest
         imagePullPolicy: Always
         name: appa
         ports:
@@ -72,17 +73,17 @@ spec:
   selector:
     matchLabels:
       app: appb
-      version: v1
+      version: v2
   template:
     metadata:
       labels:
         app: appb
-        version: v1
+        version: v2
     spec:
       nodeName: ambient-worker2
       serviceAccountName: appb
       containers:
-      - image: docker.io/knabben/httpbin
+      - image: docker.io/knabben/httpbin:latest
         imagePullPolicy: Always
         name: appb
         ports:

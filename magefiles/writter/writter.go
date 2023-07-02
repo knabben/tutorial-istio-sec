@@ -31,3 +31,9 @@ func RunCmd(cmd string, args ...string) func(args ...string) error {
 func AppendFolder(specFolder, p string) string {
 	return path.Join(specFolder, p)
 }
+
+func Output(out string) {
+	fmt.Println()
+	fmt.Println(termenv.String(out).Bold())
+	fmt.Println()
+}
