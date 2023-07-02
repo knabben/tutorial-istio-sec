@@ -1,34 +1,30 @@
-package steps
+package apps
 
 import (
 	"github.com/knabben/tutorial-istio-sec/magefiles/writter"
 	"log"
-	"path"
 )
 
 // DeployApplication install the application and objects
-func DeployApplication(namespace, specFolder string) error {
-	appsFolder := path.Join(specFolder, "apps")
+func DeployApplication(specsFolder, namespace string) error {
 	// deploy the application and Kubernetes gateway object
+	appsFolder := writter.AppendFolder(specsFolder, "apps/")
 	if err := writter.Kubectl("apply", "-n", namespace, "-f", appsFolder); err != nil {
 		return err
 	}
-	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "app=appb")
+	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "app=appb", "--timeout", "300s")
 	// create a waypoint in the namespace
 	if err := writter.Istioctl("x", "-n", namespace, "waypoint", "apply", "--service-account", "appb"); err != nil {
 		return err
 	}
-	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "istio.io/gateway-name=gateway")
+	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "istio.io/gateway-name=gateway", "--timeout", "300s")
 	return printGwListener("deploy/gateway-istio")
 }
 
 // ApplyPolicies creates a new AuthorizationPolicy for the appb service and VirtualService for control
-func ApplyPolicies(namespace, specFolder string) error {
-	policyFolder := path.Join(specFolder, "policies")
-	if err := writter.Kubectl("apply", "-n", namespace, "-f", policyFolder); err != nil {
-		return err
-	}
-	return nil
+func ApplyPolicies(specsFolder, namespace string) error {
+	policyFolder := writter.AppendFolder(specsFolder, "policies")
+	return writter.Kubectl("apply", "-n", namespace, "-f", policyFolder)
 }
 
 func printGwListener(gw string) error {

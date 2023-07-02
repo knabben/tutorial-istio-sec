@@ -17,7 +17,7 @@ func InstallKind(name, specsFolder string, withLB bool) error {
 	if err := writter.Kind("create", "cluster", "--name", name, "--config", configFile); err != nil {
 		return err
 	}
-	nodes := []string{"ambient-worker2", "ambient-control-plane", "ambient-worker"}
+	nodes := []string{name + "-worker2", name + "-control-plane", name + "-worker"}
 	// Set sysctl parameters on each node
 	for _, node := range nodes {
 		args := []string{"exec", node, "sysctl", "-w"}

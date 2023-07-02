@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/knabben/tutorial-istio-sec/magefiles/pkg/apps"
 	"github.com/knabben/tutorial-istio-sec/magefiles/pkg/istio"
 	"github.com/knabben/tutorial-istio-sec/magefiles/pkg/kind"
 	"github.com/magefile/mage/mg"
@@ -24,25 +25,15 @@ func (SM3) InstallIstio() error {
 	return istio.InstallIstio(specsFolder, namespace)
 }
 
-/*
-// Deploy creates the pre-defined topology for tests
+// Deploy creates the pre-defined application topology
 func (SM3) Deploy() error {
-	if err := DeployApplication(namespace); err != nil {
-		return err
-	}
-
-	return nil
+	return apps.DeployApplication(specsFolder, namespace)
 }
 
 // Policies create a VirtualService and define application Authorization files
 func (SM3) Policies() error {
-	if err := ApplyPolicies(namespace); err != nil {
-		return err
-	}
-
-	return nil
+	return apps.ApplyPolicies(specsFolder, namespace)
 }
-*/
 
 // Delete cleans up kind from cluster
 func (SM3) Delete() error {

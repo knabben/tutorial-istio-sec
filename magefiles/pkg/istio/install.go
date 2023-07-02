@@ -36,15 +36,7 @@ func InstallIstio(specsFolder, namespace string) error {
 			"label", "namespace", namespace, "istio.io/dataplane-mode=ambient",
 		},
 		{
-			"-n",
-			"istio-system",
-			"wait",
-			"--for=condition=Ready",
-			"pod",
-			"-l",
-			"app=kiali",
-			"--timeout",
-			"300s",
+			"-n", "istio-system", "wait", "--for=condition=Ready", "pod", "-l", "app=kiali", "--timeout", "300s",
 		},
 	}
 	for _, a := range argsList {
