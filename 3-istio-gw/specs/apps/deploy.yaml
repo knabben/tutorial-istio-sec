@@ -35,6 +35,7 @@ spec:
         version: v1
     spec:
       serviceAccountName: appa
+      nodeName: ambient-worker
       containers:
       - image: docker.io/knabben/httpbin
         imagePullPolicy: Always
@@ -78,6 +79,7 @@ spec:
         app: appb
         version: v1
     spec:
+      nodeName: ambient-worker2
       serviceAccountName: appb
       containers:
       - image: docker.io/knabben/httpbin
