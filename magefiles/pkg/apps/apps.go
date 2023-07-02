@@ -29,10 +29,8 @@ func DeployApplication(specsFolder, namespace string) error {
 		return err
 	}
 	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "istio.io/gateway-name=gateway", "--timeout", "300s")
-
 	printGwListener("deploy/gateway-istio")
 	writter.Output("Run with HTTPS:\n curl https://appb.twitter.com/headers -v --cacert 3-istio-gw/certs/twitter.com.crt")
-
 	return nil
 }
 

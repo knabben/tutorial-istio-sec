@@ -9,6 +9,9 @@ func DeleteIstio(specFolder string) error {
 	if err := writter.Istioctl("x", "waypoint", "delete", "appb"); err != nil {
 		return err
 	}
+	if err := writter.Istioctl("x", "waypoint", "delete", "appa"); err != nil {
+		return err
+	}
 
 	if err := writter.Istioctl("uninstall", "-y", "--purge"); err != nil {
 		return err

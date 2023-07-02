@@ -2,20 +2,22 @@
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: authz-appb
+  name: authz
   namespace: default
 spec:
   selector:
     matchLabels:
-      istio.io/gateway-name: appb
+      gateway.istio.io/managed: istio.io-mesh-controller
   action: ALLOW
   rules:
     - from:
         - source:
             principals:
               - cluster.local/ns/default/sa/appa
+              - cluster.local/ns/default/sa/appb
               - cluster.local/ns/default/sa/gateway-istio
       to:
       - operation:
           methods:
           - GET
+          - DELETE
