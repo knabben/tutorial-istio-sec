@@ -53,7 +53,7 @@ data:
         api_version: autoscaling/v2beta2
         spec: {}
       image_digest: ""
-      image_name: quay.io/kiali/kiali
+      image_name: knabben/kiali:dev
       image_pull_policy: Always
       image_pull_secrets: []
       image_version: v1.67
@@ -470,7 +470,7 @@ spec:
     spec:
       serviceAccountName: kiali
       containers:
-      - image: "quay.io/kiali/kiali:v1.67"
+      - image: "knabben/kiali:dev"
         imagePullPolicy: Always
         name: kiali
         command:
