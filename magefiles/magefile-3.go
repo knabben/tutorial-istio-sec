@@ -10,7 +10,7 @@ import (
 const (
 	namespace    = "default"
 	CLUSTER_NAME = "ambient"
-	specsFolder  = "3-istio-gw/specs"
+	specsFolder  = "3-istio-gw/dev/specs"
 )
 
 type SM3 mg.Namespace
@@ -22,17 +22,20 @@ func (SM3) Install() error {
 
 // InstallIstio install ambient
 func (SM3) InstallIstio() error {
-	return istio.InstallIstio(specsFolder, namespace)
+	specs := "3-istio-gw/specs"
+	return istio.InstallIstio(specs, namespace)
 }
 
 // Deploy creates the pre-defined application topology
 func (SM3) Deploy() error {
-	return apps.DeployApplication(specsFolder, namespace)
+	specs := "3-istio-gw/specs"
+	return apps.DeployApplication(specs, namespace)
 }
 
 // Policies create a VirtualService and define application Authorization files
 func (SM3) Policies() error {
-	return apps.ApplyPolicies(specsFolder, namespace)
+	specs := "3-istio-gw/specs"
+	return apps.ApplyPolicies(specs, namespace)
 }
 
 // Delete cleans up kind from cluster

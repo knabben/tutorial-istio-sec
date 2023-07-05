@@ -7,7 +7,7 @@ import (
 
 // DeployApplication install the application and objects
 func DeployApplication(specsFolder, namespace string) error {
-	p := writter.AppendFolder(specsFolder, "../certs/")
+	p := writter.AppendFolder(specsFolder, "../dev/certs/")
 	if err := writter.Kubectl("create", "secret", "tls", "twitter-credential",
 		"--key="+writter.AppendFolder(p, "appb.twitter.com.key"),
 		"--cert="+writter.AppendFolder(p, "appb.twitter.com.crt"),
@@ -30,7 +30,7 @@ func DeployApplication(specsFolder, namespace string) error {
 	}
 	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "istio.io/gateway-name=gateway", "--timeout", "300s")
 	printGwListener("deploy/gateway-istio")
-	writter.Output("Run with HTTPS:\n curl https://appb.twitter.com/headers -v --cacert 3-istio-gw/certs/twitter.com.crt")
+	writter.Output("Run with HTTPS:\n curl https://appb.twitter.com/headers -v --cacert 3-istio-gw/dev/certs/twitter.com.crt")
 	return nil
 }
 
