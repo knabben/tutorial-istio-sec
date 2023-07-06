@@ -20,7 +20,8 @@ func DeleteIstio(specFolder string) error {
 	// Uninstall otel addons
 	otelFolder := writter.AppendFolder(specFolder, "otel/")
 	appsFolder := writter.AppendFolder(specFolder, "apps/")
-	if err := writter.Kubectl("delete", "-f", otelFolder, "-f", appsFolder); err != nil {
+	certFolder := writter.AppendFolder(specFolder, "cert-manager/")
+	if err := writter.Kubectl("delete", "-f", otelFolder, "-f", appsFolder, "-f", certFolder); err != nil {
 		return err
 	}
 
