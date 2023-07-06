@@ -20,7 +20,7 @@ spec:
     tls:
       mode: Terminate
       certificateRefs:
-        - name: twitter-credential
+        - name: letsencrypt-cert
     allowedRoutes:
       namespaces:
         from: All

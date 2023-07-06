@@ -1,0 +1,27 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+    - http01:
+        gatewayHTTPRoute:
+          parentRefs:
+            - name: gateway
+              namespace: default
+              kind: Gateway
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cert-tls
+spec:
+  secretName: letsencrypt-cert
+  issuerRef:
+    name: letsencrypt
+  dnsNames:
+  - appb.opssec.in
