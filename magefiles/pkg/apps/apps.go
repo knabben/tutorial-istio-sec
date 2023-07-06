@@ -7,14 +7,10 @@ import (
 
 // DeployApplication install the application and objects
 func DeployApplication(specsFolder, namespace string) error {
-	p := writter.AppendFolder(specsFolder, "../certs/")
-	if err := writter.Kubectl("create", "secret", "tls", "twitter-credential",
-		"--key="+writter.AppendFolder(p, "appb.twitter.com.key"),
-		"--cert="+writter.AppendFolder(p, "appb.twitter.com.crt"),
-	); err != nil {
+	certFolder := writter.AppendFolder(specsFolder, "cert-manager/")
+	if err := writter.Kubectl("apply", "-n", namespace, "-f", certFolder); err != nil {
 		return err
 	}
-
 	// deploy the application and Kubernetes gateway object
 	appsFolder := writter.AppendFolder(specsFolder, "apps/")
 	if err := writter.Kubectl("apply", "-n", namespace, "-f", appsFolder); err != nil {

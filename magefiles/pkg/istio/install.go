@@ -22,7 +22,7 @@ func InstallIstio(specsFolder, namespace string) error {
 	}
 	// Install Istio with custom ambient
 	config := writter.AppendFolder(specsFolder, ISTIO_CONFIG)
-	if err := writter.Istioctl("install", "-y", "--set", "values.global.proxy.logLevel=debug", "-f", config); err != nil {
+	if err := writter.Istioctl("install", "-y", "--set", "values.global.proxy.logLevel=info", "-f", config); err != nil {
 		return err
 	}
 	// Apply otel addons
