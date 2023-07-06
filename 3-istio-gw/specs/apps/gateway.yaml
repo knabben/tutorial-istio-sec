@@ -7,14 +7,14 @@ spec:
   gatewayClassName: istio
   listeners:
   - name: http
-    hostname: "*.twitter.com"
+    hostname: "*.opssec.in"
     port: 80
     protocol: HTTP
     allowedRoutes:
       namespaces:
         from: All
   - name: https
-    hostname: "*.twitter.com"
+    hostname: "*.opssec.in"
     port: 443
     protocol: HTTPS
     tls:
@@ -33,7 +33,7 @@ metadata:
 spec:
   parentRefs:
   - name: gateway
-  hostnames: ["appb.twitter.com"]
+  hostnames: ["appb.opssec.in"]
   rules:
   - matches:
     - path:
