@@ -8,7 +8,7 @@ import (
 // DeployApplication install the application and objects
 func DeployApplication(specsFolder, namespace string) error {
 	certFolder := writter.AppendFolder(specsFolder, "cert-manager/")
-	if err := writter.Kubectl("apply", "-n", namespace, "-f", certFolder); err != nil {
+	if err := writter.Kubectl("apply", "-f", certFolder); err != nil {
 		return err
 	}
 	// deploy the application and Kubernetes gateway object
