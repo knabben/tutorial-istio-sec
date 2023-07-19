@@ -22,7 +22,7 @@ func (SM3) Install() error {
 
 // InstallIstio install ambient
 func (SM3) InstallIstio() error {
-	return istio.InstallIstio(specsFolder, namespace)
+	return istio.InstallIstio(specsFolder, namespace, true, true)
 }
 
 // Deploy creates the pre-defined application topology

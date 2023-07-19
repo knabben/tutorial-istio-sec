@@ -1,0 +1,64 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  meshConfig:
+    defaultConfig:
+      proxyMetadata:
+        ISTIO_META_ENABLE_HBONE: "true"
+
+    # Telemetry API is used with ambient instead of EnvoyFilters
+    defaultProviders:
+      metrics:
+      - prometheus
+
+    extensionProviders:
+    - name: prometheus
+      prometheus: {}
+    - name: otel
+      envoyOtelAls:
+        service: opentelemetry-collector.istio-system.svc.cluster.local
+        port: 4317
+    - name: skywalking
+      skywalking:
+        service: tracing.istio-system.svc.cluster.local
+        port: 11800
+    - name: otel-tracing
+      opentelemetry:
+        port: 4317
+        service: opentelemetry-collector.otel-collector.svc.cluster.local
+
+  components:
+    cni:
+      enabled: true
+    ztunnel:
+      enabled: true
+    ingressGateways:
+    - name: istio-ingressgateway
+      enabled: false
+
+  values:
+    pilot:
+      env:
+        # Setup more secure default that is off in 'default' only for backwards compatibility
+        VERIFY_CERTIFICATE_AT_CLIENT: "true"
+        ENABLE_AUTO_SNI: "true"
+
+        PILOT_ENABLE_HBONE: "true"
+        CA_TRUSTED_NODE_ACCOUNTS: "istio-system/ztunnel,kube-system/ztunnel"
+        PILOT_ENABLE_AMBIENT_CONTROLLERS: "true"
+    cni:
+      privileged: true
+      ambient:
+        enabled: true
+
+      # Default excludes istio-system; its actually fine to redirect there since we opt-out istiod, ztunnel, and istio-cni
+      excludeNamespaces:
+      - kube-system
+
+      # TODO: https://github.com/istio/istio/issues/43243
+      # variant: distroless
+    telemetry:
+      # Telemetry handled with Telemetry API only
+      enabled: false
+      v2:
+        enabled: false

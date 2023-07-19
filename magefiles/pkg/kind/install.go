@@ -29,13 +29,20 @@ func InstallKind(name, specsFolder string, withLB bool) error {
 		}
 	}
 	if withLB {
-		// Install MetalLB in the cluster
-		for _, spec := range []string{METALLB_URL, path.Join(specsFolder, METALLB_CR)} {
-			_ = writter.Kubectl("-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb", "--timeout", "300s")
-			// Create a new cluster using predefined configuration file
-			if err := writter.Kubectl("apply", "-f", spec); err != nil {
-				return err
-			}
+		if err := installMetalLB(specsFolder); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// installMetalLB Installs MetalLB in the cluster
+func installMetalLB(specsFolder string) error {
+	for _, spec := range []string{METALLB_URL, path.Join(specsFolder, METALLB_CR)} {
+		_ = writter.Kubectl("-n", "metallb-system", "wait", "--for=condition=Ready", "pod", "-l", "app=metallb", "--timeout", "300s")
+		// Create a new cluster using predefined configuration file
+		if err := writter.Kubectl("apply", "-f", spec); err != nil {
+			return err
 		}
 	}
 	return nil
