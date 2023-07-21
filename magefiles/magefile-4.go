@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/knabben/tutorial-istio-sec/magefiles/pkg/apps"
 	"github.com/knabben/tutorial-istio-sec/magefiles/pkg/istio"
 	"github.com/knabben/tutorial-istio-sec/magefiles/pkg/kind"
 	"github.com/magefile/mage/mg"
@@ -14,6 +15,8 @@ const (
 
 type SM4 mg.Namespace
 
+var handleCM = false
+
 // Install installs kind and metallb into the cluster
 func (SM4) Install() error {
 	return kind.InstallKind(CLUSTER4_NAME, SPECS4_FOLDER, false)
@@ -24,12 +27,17 @@ func (SM4) Delete() error {
 	return kind.DeleteKind(CLUSTER4_NAME)
 }
 
+// Deploy creates the pre-defined application topology
+func (SM4) Deploy() error {
+	return apps.DeployApplication(SPECS4_FOLDER, NAMESPACE4, handleCM, false)
+}
+
 // InstallIstio install ambient
 func (SM4) InstallIstio() error {
-	return istio.InstallIstio(SPECS4_FOLDER, NAMESPACE4, false, true)
+	return istio.InstallIstio(SPECS4_FOLDER, NAMESPACE4, true, true)
 }
 
 // DeleteIstio cleans up resources from cluster
 func (SM4) DeleteIstio() error {
-	return istio.DeleteIstio(SPECS4_FOLDER)
+	return istio.DeleteIstio(SPECS4_FOLDER, handleCM)
 }

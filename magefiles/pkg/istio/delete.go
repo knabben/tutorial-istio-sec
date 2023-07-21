@@ -5,7 +5,7 @@ import (
 )
 
 // DeleteIstio uninstall istio and local waypoint
-func DeleteIstio(specFolder string) error {
+func DeleteIstio(specFolder string, handleCM bool) error {
 	if err := writter.Istioctl("x", "waypoint", "delete", "appb"); err != nil {
 		return err
 	}
@@ -18,10 +18,15 @@ func DeleteIstio(specFolder string) error {
 	}
 
 	// Uninstall otel addons
-	otelFolder := writter.AppendFolder(specFolder, "otel/")
+	otelFolder := writter.AppendFolder("specs", "otel/")
 	appsFolder := writter.AppendFolder(specFolder, "apps/")
-	certFolder := writter.AppendFolder(specFolder, "cert-manager/")
-	if err := writter.Kubectl("delete", "-f", otelFolder, "-f", appsFolder, "-f", certFolder); err != nil {
+	if handleCM {
+		certFolder := writter.AppendFolder(specFolder, "cert-manager/")
+		if err := writter.Kubectl("delete", "-f", certFolder); err != nil {
+			return err
+		}
+	}
+	if err := writter.Kubectl("delete", "-f", otelFolder, "-f", appsFolder); err != nil {
 		return err
 	}
 

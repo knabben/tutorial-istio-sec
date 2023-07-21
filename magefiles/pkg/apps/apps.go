@@ -6,14 +6,15 @@ import (
 )
 
 // DeployApplication install the application and objects
-func DeployApplication(specsFolder, namespace string) error {
-	certFolder := writter.AppendFolder(specsFolder, "cert-manager/")
-	if err := writter.Kubectl("apply", "-f", certFolder); err != nil {
-		return err
+func DeployApplication(specsFolder, namespace string, installCM, gateway bool) error {
+	if installCM {
+		certFolder := writter.AppendFolder(specsFolder, "cert-manager/")
+		if err := writter.Kubectl("apply", "-f", certFolder); err != nil {
+			return err
+		}
 	}
-	// deploy the application and Kubernetes gateway object
-	appsFolder := writter.AppendFolder(specsFolder, "apps/")
-	if err := writter.Kubectl("apply", "-n", namespace, "-f", appsFolder); err != nil {
+	// deploy the application specs
+	if err := writter.Kubectl("apply", "-n", namespace, "-f", writter.AppendFolder(specsFolder, "apps/")); err != nil {
 		return err
 	}
 	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "app=appb", "--timeout", "300s")
@@ -24,8 +25,12 @@ func DeployApplication(specsFolder, namespace string) error {
 	if err := writter.Istioctl("x", "-n", namespace, "waypoint", "apply", "--service-account", "appa"); err != nil {
 		return err
 	}
-	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "istio.io/gateway-name=gateway", "--timeout", "300s")
-	printGwListener("deploy/gateway-istio")
+
+	if gateway {
+		_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "istio.io/gateway-name=gateway", "--timeout", "300s")
+		printGwListener("deploy/gateway-istio")
+	}
+
 	return nil
 }
 

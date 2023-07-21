@@ -9,20 +9,22 @@ import (
 
 const (
 	CLUSTER_NAME_2 = "grpc"
-	SPEC_PATH      = "2-spiffe/specs/install.yaml"
+	SPEC2_PATH     = "2-spiffe/specs/install.yaml"
 	SPEC_APPS      = "2-spiffe/specs/app.yaml"
 )
+
+// todo(knabben) -- review, move to envoy + OPA + spire
 
 type SM2 mg.Namespace
 
 // Install installs resources into the cluster
 func (SM2) Install() error {
-	return kind.InstallKind(CLUSTER_NAME_2, specsFolder, false)
+	return kind.InstallKind(CLUSTER_NAME_2, SPEC2_PATH, false)
 }
 
 // InstallSpire install SPIRE server and application
 func (SM2) InstallSpire() error {
-	return spire.InstallSpire(SPEC_PATH, SPEC_APPS)
+	return spire.InstallSpire(SPEC2_PATH, SPEC_APPS)
 }
 
 // Delete cleans up resources from cluster
