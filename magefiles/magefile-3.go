@@ -27,7 +27,7 @@ func (SM3) InstallIstio() error {
 
 // Deploy creates the pre-defined application topology
 func (SM3) Deploy() error {
-	return apps.DeployApplication(SPECS3_FOLDER, NAMESPACE3, true, true)
+	return apps.DeployApplication(SPECS3_FOLDER, NAMESPACE3, true, true, "app")
 }
 
 // Policies create a VirtualService and define application Authorization files

@@ -2,87 +2,91 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: appa
+  name: grpca
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: appa
+  name: grpca
   labels:
-    app: appa
-    service: appa
+    app: grpca
+    service: grpca
 spec:
   ports:
-  - name: http
-    port: 8000
-    targetPort: 80
+  - name: grpc
+    port: 9000
+    targetPort: 9000
+    appProtocol: grpc
   selector:
-    app: appa
+    app: grpca
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: appa
+  name: grpca
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: appa
+      app: grpca
       version: v1
   template:
     metadata:
       labels:
-        app: appa
+        app: grpca
         version: v1
     spec:
-      serviceAccountName: appa
+      nodeName: ambient-worker
+      serviceAccountName: grpca
       containers:
-      - image: docker.io/knabben/httpbin:latest
+      - image: docker.io/knabben/grpcbin:latest
         imagePullPolicy: Always
-        name: appa
+        name: grpca
         ports:
-        - containerPort: 80
+        - containerPort: 9000
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: appb
+  name: grpcb
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: appb
+  name: grpcb
   labels:
-    app: appb
-    service: appb
+    app: grpcb
+    service: grpcb
 spec:
   ports:
-  - name: http
-    port: 8000
-    targetPort: 80
+  - name: grpc
+    port: 9000
+    targetPort: 9000
+    appProtocol: grpc
   selector:
-    app: appb
+    app: grpcb
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: appb
+  name: grpcb
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: appb
+      app: grpcb
       version: v2
   template:
     metadata:
       labels:
-        app: appb
+        app: grpcb
         version: v2
     spec:
-      serviceAccountName: appb
+      nodeName: ambient-worker2
+      serviceAccountName: grpcb
       containers:
-      - image: docker.io/knabben/httpbin:latest
+      - image: docker.io/knabben/grpcbin:latest
         imagePullPolicy: Always
-        name: appb
+        name: grpcb
         ports:
-        - containerPort: 80
+        - containerPort: 9000

@@ -27,11 +27,6 @@ func (SM4) Delete() error {
 	return kind.DeleteKind(CLUSTER4_NAME)
 }
 
-// Deploy creates the pre-defined application topology
-func (SM4) Deploy() error {
-	return apps.DeployApplication(SPECS4_FOLDER, NAMESPACE4, handleCM, false)
-}
-
 // InstallIstio install ambient
 func (SM4) InstallIstio() error {
 	return istio.InstallIstio(SPECS4_FOLDER, NAMESPACE4, true, true)
@@ -40,4 +35,15 @@ func (SM4) InstallIstio() error {
 // DeleteIstio cleans up resources from cluster
 func (SM4) DeleteIstio() error {
 	return istio.DeleteIstio(SPECS4_FOLDER, handleCM)
+}
+
+// Deploy creates the pre-defined application topology
+func (SM4) Deploy() error {
+	return apps.DeployApplication(SPECS4_FOLDER, NAMESPACE4, handleCM, false, "grpc")
+}
+
+// CheckApp check the application information
+func (SM4) CheckApp() error {
+	return nil
+	//return checkers(SPECS4_FOLDER, NAMESPACE4, handleCM, false)
 }

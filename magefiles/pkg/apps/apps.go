@@ -6,24 +6,25 @@ import (
 )
 
 // DeployApplication install the application and objects
-func DeployApplication(specsFolder, namespace string, installCM, gateway bool) error {
+func DeployApplication(specsFolder, namespace string, installCM, gateway bool, serviceAccount string) error {
 	if installCM {
 		certFolder := writter.AppendFolder(specsFolder, "cert-manager/")
 		if err := writter.Kubectl("apply", "-f", certFolder); err != nil {
 			return err
 		}
 	}
+
 	// deploy the application specs
 	if err := writter.Kubectl("apply", "-n", namespace, "-f", writter.AppendFolder(specsFolder, "apps/")); err != nil {
 		return err
 	}
-	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "app=appb", "--timeout", "300s")
+	_ = writter.Kubectl("wait", "--for=condition=Ready", "pod", "-l", "app="+serviceAccount+"b", "--timeout", "300s")
 	// create a waypoint for service accounts
-	if err := writter.Istioctl("x", "-n", namespace, "waypoint", "apply", "--service-account", "appb"); err != nil {
-		return err
-	}
-	if err := writter.Istioctl("x", "-n", namespace, "waypoint", "apply", "--service-account", "appa"); err != nil {
-		return err
+
+	for _, s := range []string{"a", "b"} {
+		if err := writter.Istioctl("x", "-n", namespace, "waypoint", "apply", "--service-account", serviceAccount+s); err != nil {
+			return err
+		}
 	}
 
 	if gateway {
