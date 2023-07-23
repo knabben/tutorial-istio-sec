@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/knabben/tutorial-istio-sec/magefiles/pkg/kind"
 	"github.com/knabben/tutorial-istio-sec/magefiles/pkg/spire"
-	"github.com/knabben/tutorial-istio-sec/magefiles/writter"
 	"github.com/magefile/mage/mg"
 )
 
@@ -26,5 +25,13 @@ func (SM2) Delete() error {
 
 // InstallSpire install SPIRE server and application
 func (SM2) InstallSpire() error {
-	return spire.Bootstrap(writter.AppendFolder(SPEC2_PATH, "bootstrap"))
+	return spire.Bootstrap(SPEC2_PATH)
+}
+
+func (SM2) Deploy() error {
+	if err := spire.Deploy(SPEC2_PATH); err != nil {
+		return err
+	}
+
+	return spire.Check()
 }

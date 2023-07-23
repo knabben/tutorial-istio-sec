@@ -3,25 +3,36 @@ package spire
 import (
 	"fmt"
 	"github.com/knabben/tutorial-istio-sec/magefiles/writter"
+	"github.com/magefile/mage/sh"
+	"strings"
 	"time"
 )
 
 func Bootstrap(specPath string) error {
-	if err := writter.Kubectl("apply", "-f", writter.AppendFolder(specPath, "spire-quickstart.yaml")); err != nil {
+	bootstrap := writter.AppendFolder(specPath, "bootstrap")
+	if err := writter.Kubectl("apply", "-f", writter.AppendFolder(bootstrap, "spire-quickstart.yaml")); err != nil {
 		return err
 	}
 
-	args := []string{"wait", "--for=condition=Ready", "-n", "spire", "pod", "-l", "app=spire-server", "--timeout", "300s"}
-	if err := writter.Kubectl(args...); err == nil {
+	args := []string{"wait", "--for=condition=Ready", "-n", "spire", "pod", "-l", "app=spire-server", "--timeout", "600s"}
+	if err := writter.Kubectl(args...); err != nil {
 		return err
 	}
 
-	if err := writter.Kubectl("apply", "-f", writter.AppendFolder(specPath, "clusterspiffee.yaml")); err != nil {
+	if err := writter.Kubectl("apply", "-f", writter.AppendFolder(bootstrap, "clusterspiffee.yaml")); err != nil {
+		return err
+	}
+
+	writter.Kubectl("label", "namespace", "default", "istio-injection=enabled")
+
+	if err := writter.Istioctl("install", "--skip-confirmation", "-f", writter.AppendFolder(specPath, "istio.yaml")); err != nil {
 		return err
 	}
 
 	return nil
 }
+
+// InstallSpire installs and set the SPIRE server manually
 func InstallSpire(specPath, specApps string) error {
 	if err := writter.Kubectl("apply", "-f", specPath); err != nil {
 		return err
@@ -70,4 +81,24 @@ func InstallSpire(specPath, specApps string) error {
 	}
 	// Install client/server deployment
 	return writter.Kubectl("apply", "-f", specApps)
+}
+
+func Deploy(specPath string) error {
+	if err := writter.Kubectl("apply", "-f", writter.AppendFolder(specPath, "deploy.yaml")); err != nil {
+		return err
+	}
+	args := []string{"wait", "--for=condition=Ready", "pod", "-l", "app=sleep", "--timeout", "300s"}
+	if err := writter.Kubectl(args...); err == nil {
+		return err
+	}
+	return nil
+}
+
+func Check() error {
+	pod, _ := sh.Output("kubectl", "get", "pod", "-l", "app=spire-server", "-n", "spire", "-o", "jsonpath=\"{.items[0].metadata.name}\"")
+	fmt.Println(pod)
+
+	out, _ := sh.Output("kubectl", "exec", "-t", strings.Trim(pod, "\""), "-n", "spire", "-c", "spire-server", "--", "./bin/spire-server", "entry", "show")
+	fmt.Println(out)
+	return nil
 }
