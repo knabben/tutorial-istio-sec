@@ -41,9 +41,3 @@ func (SM4) DeleteIstio() error {
 func (SM4) Deploy() error {
 	return apps.DeployApplication(SPECS4_FOLDER, NAMESPACE4, handleCM, false, "grpc")
 }
-
-// CheckApp check the application information
-func (SM4) CheckApp() error {
-	return nil
-	//return checkers(SPECS4_FOLDER, NAMESPACE4, handleCM, false)
-}

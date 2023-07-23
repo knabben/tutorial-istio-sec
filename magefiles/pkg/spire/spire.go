@@ -6,6 +6,22 @@ import (
 	"time"
 )
 
+func Bootstrap(specPath string) error {
+	if err := writter.Kubectl("apply", "-f", writter.AppendFolder(specPath, "spire-quickstart.yaml")); err != nil {
+		return err
+	}
+
+	args := []string{"wait", "--for=condition=Ready", "-n", "spire", "pod", "-l", "app=spire-server", "--timeout", "300s"}
+	if err := writter.Kubectl(args...); err == nil {
+		return err
+	}
+
+	if err := writter.Kubectl("apply", "-f", writter.AppendFolder(specPath, "clusterspiffee.yaml")); err != nil {
+		return err
+	}
+
+	return nil
+}
 func InstallSpire(specPath, specApps string) error {
 	if err := writter.Kubectl("apply", "-f", specPath); err != nil {
 		return err
