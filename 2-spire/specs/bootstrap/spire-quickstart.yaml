@@ -207,7 +207,7 @@ data:
     server {
       bind_address = "0.0.0.0"
       bind_port = "8081"
-      trust_domain = "opssec.in"
+      trust_domain = "example.org"
       data_dir = "/run/spire/server/data"
       log_level = "DEBUG"
       federation {
@@ -278,7 +278,7 @@ data:
       resourceName: 98c9c988.spiffe.io
       resourceNamespace: spire
     clusterName: demo-cluster
-    trustDomain: opssec.in
+    trustDomain: example.org
     ignoreNamespaces:
       - kube-system
       - kube-public
@@ -338,7 +338,7 @@ spec:
               mountPath: /tmp/spire-server/private
               readOnly: false
         - name: spire-controller-manager
-          image: ghcr.io/spiffe/spire-controller-manager:nightly
+          image: ghcr.io/spiffe/spire-controller-manager:0.2.3
           imagePullPolicy: IfNotPresent
           args:
           - "--config=spire-controller-manager-config.yaml"
@@ -479,7 +479,7 @@ spec:
                 type: string
               trustDomain:
                 description: TrustDomain is the name of the trust domain to federate
-                  with (e.g. opssec.in)
+                  with (e.g. example.org)
                 pattern: '[a-z0-9._-]{1,255}'
                 type: string
               trustDomainBundle:
@@ -822,7 +822,7 @@ data:
       server_port = "8081"
       socket_path = "/run/secrets/workload-spiffe-uds/socket"
       trust_bundle_path = "/run/spire/bundle/bundle.crt"
-      trust_domain = "opssec.in"
+      trust_domain = "example.org"
     }
 
     plugins {

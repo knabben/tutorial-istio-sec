@@ -5,7 +5,7 @@ metadata:
 spec:
   profile: default
   meshConfig:
-    trustDomain: opssec.in
+    trustDomain: example.org
   values:
     global:
     # This is used to customize the sidecar template
