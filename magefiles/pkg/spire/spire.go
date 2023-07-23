@@ -100,5 +100,10 @@ func Check() error {
 
 	out, _ := sh.Output("kubectl", "exec", "-t", strings.Trim(pod, "\""), "-n", "spire", "-c", "spire-server", "--", "./bin/spire-server", "entry", "show")
 	fmt.Println(out)
+
+	pod, _ = sh.Output("kubectl", "get", "pod", "-l", "app=sleep", "-o", "jsonpath=\"{.items[0].metadata.name}\"")
+	out, _ = sh.Output("istioctl", "pc", "secret", strings.Trim(pod, "\""))
+	fmt.Println(out)
+
 	return nil
 }
