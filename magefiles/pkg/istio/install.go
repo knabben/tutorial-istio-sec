@@ -13,7 +13,7 @@ const (
 func InstallIstio(specFolder, namespace string, installGW, installOTEL bool) error {
 	// Install Istio with custom ambient
 	config := writter.AppendFolder(specFolder, ISTIO_CONFIG)
-	if err := writter.Istioctl("install", "-y", "--set", "values.global.proxy.logLevel=info", "-f", config); err != nil {
+	if err := writter.Istioctl("install", "-y", "--set", "values.global.proxy.logLevel=debug", "-f", config); err != nil {
 		return err
 	}
 	if installGW { // apply Gateway API custom resources.
