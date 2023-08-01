@@ -45,6 +45,6 @@ spec:
         port: 8000
         weight: 20
       - kind: Service
-        name: appa
+        name: appb
         port: 8000
         weight: 80
