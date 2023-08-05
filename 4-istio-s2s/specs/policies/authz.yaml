@@ -18,3 +18,4 @@ spec:
       - operation:
           methods:
           - POST
+          paths: ["/grpcbin.GRPCBin/DummyServerStream", "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo"]

@@ -41,3 +41,8 @@ func (SM4) DeleteIstio() error {
 func (SM4) Deploy() error {
 	return apps.DeployApplication(SPECS4_FOLDER, NAMESPACE4, handleCM, false, "grpc")
 }
+
+// Policies install the policies
+func (SM4) Policies() error {
+	return apps.ApplyPolicies(SPECS4_FOLDER, NAMESPACE4)
+}
