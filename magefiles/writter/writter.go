@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/magefile/mage/sh"
 	"github.com/muesli/termenv"
+	"log"
 	"path"
 )
 
@@ -24,7 +25,9 @@ func RunCmd(cmd string, args ...string) func(args ...string) error {
 			termenv.String(result...).Bold(),
 			"\n",
 		)
-		return sh.Run(cmd, result...)
+		out, err := sh.Output(cmd, result...)
+		log.Println(out)
+		return err
 	}
 }
 
