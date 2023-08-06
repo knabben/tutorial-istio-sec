@@ -1,0 +1,29 @@
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: image-policy
+spec:
+  images:
+    - glob: "ttl.sh/knabben/**"
+  authorities:
+    - keyless:
+        identities:
+          - issuer: https://github.com/login/oauth
+            subject: aknabben@vmware.com
+      attestations:
+        - name: must-have-cyclonedx
+          predicateType: "https://cyclonedx.org/bom"
+          policy:
+            type: cue
+            data: |
+              predicateType: "https://cyclonedx.org/bom"
+              predicate: {
+                  specVersion: "1.4"
+                  metadata: {
+                      tools: [
+                          {
+                              name: "syft"
+                          }
+                      ]
+                  }
+              }
